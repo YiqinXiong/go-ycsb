@@ -25,3 +25,9 @@ rocksdb.no_block_cache = false
 rocksdb.pin_l0_filter_and_index_blocks_in_cache = false
 rocksdb.whole_key_filtering = true
 rocksdb.block_restart_interval = 16
+
+# xyq add
+rocksdb.bits_per_key = 10
+rocksdb.min_write_buffer_number_to_merge = 1
+rocksdb.disable_auto_compactions = false
+

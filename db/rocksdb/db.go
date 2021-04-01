@@ -60,6 +60,10 @@ const (
 	rocksdbFilterPolicy                     = "rocksdb.filter_policy"
 	rocksdbIndexType                        = "rocksdb.index_type"
 	// TODO: add more configurations
+	// xyq add
+	rocksdbBitsPerKey                  = "rocksdb.bits_per_key"
+	rocksdbMinWriteBufferNumberToMerge = "rocksdb.min_write_buffer_number_to_merge"
+	rocksdbDisableAutoCompactions      = "rocksdb.disable_auto_compactions"
 )
 
 type rocksDBCreator struct {
@@ -116,8 +120,9 @@ func getTableOptions(p *properties.Properties) *gorocksdb.BlockBasedTableOptions
 
 	if b := p.GetString(rocksdbFilterPolicy, ""); len(b) > 0 {
 		if b == "rocksdb.BuiltinBloomFilter" {
-			const defaultBitsPerKey = 10
-			tblOpts.SetFilterPolicy(gorocksdb.NewBloomFilter(defaultBitsPerKey))
+			// const defaultBitsPerKey = 10
+			const BitsPerKey = p.GetInt(rocksdbBitsPerKey, 10)
+			tblOpts.SetFilterPolicy(gorocksdb.NewBloomFilter(BitsPerKey))
 		}
 	}
 
@@ -155,6 +160,9 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 	opts.SetUseFsync(p.GetBool(rocksdbUseFsync, false))
 	opts.SetWriteBufferSize(p.GetInt(rocksdbWriteBufferSize, 64<<20))
 	opts.SetMaxWriteBufferNumber(p.GetInt(rocksdbMaxWriteBufferNumber, 2))
+
+	opts.SetMinWriteBufferNumberToMerge(p.GetInt(rocksdbMinWriteBufferNumberToMerge, 1))
+	opts.SetDisableAutoCompactions(p.GetBool(rocksdbDisableAutoCompactions, false))
 
 	opts.SetBlockBasedTableFactory(getTableOptions(p))
 
