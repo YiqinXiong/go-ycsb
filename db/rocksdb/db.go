@@ -64,6 +64,8 @@ const (
 	rocksdbBitsPerKey                  = "rocksdb.bits_per_key"
 	rocksdbMinWriteBufferNumberToMerge = "rocksdb.min_write_buffer_number_to_merge"
 	rocksdbDisableAutoCompactions      = "rocksdb.disable_auto_compactions"
+	rocksdbTargetFileSizeBase          = "rocksdb.target_file_size_base"
+	rocksdbOptimizeFiltersForHits      = "rocksdb.optimize_filters_for_hits"
 )
 
 type rocksDBCreator struct {
@@ -163,6 +165,8 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 
 	opts.SetMinWriteBufferNumberToMerge(p.GetInt(rocksdbMinWriteBufferNumberToMerge, 1))
 	opts.SetDisableAutoCompactions(p.GetBool(rocksdbDisableAutoCompactions, false))
+	opts.SetTargetFileSizeBase(p.GetUint64(rocksdbTargetFileSizeBase, 64<<20))
+	opts.SetOptimizeFiltersForHits(p.GetBool(rocksdbOptimizeFiltersForHits, false))
 
 	opts.SetBlockBasedTableFactory(getTableOptions(p))
 
