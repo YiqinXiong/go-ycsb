@@ -109,7 +109,7 @@ func (c rocksDBCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	}, nil
 }
 
-func getTableOptions(p *properties.Properties) *gorocksdb.BlockBasedTableOptions {
+func getTableOptions(p *properties.Properties) (*gorocksdb.BlockBasedTableOptions, bool) {
 	tblOpts := gorocksdb.NewDefaultBlockBasedTableOptions()
 
 	tblOpts.SetBlockSize(p.GetInt(rocksdbBlockSize, 4<<10))
@@ -128,16 +128,18 @@ func getTableOptions(p *properties.Properties) *gorocksdb.BlockBasedTableOptions
 		}
 	}
 
+	isHashSearch := false
 	indexType := p.GetString(rocksdbIndexType, "kBinarySearch")
 	if indexType == "kBinarySearch" {
 		tblOpts.SetIndexType(gorocksdb.KBinarySearchIndexType)
 	} else if indexType == "kHashSearch" {
+		isHashSearch = true
 		tblOpts.SetIndexType(gorocksdb.KHashSearchIndexType)
 	} else if indexType == "kTwoLevelIndexSearch" {
 		tblOpts.SetIndexType(gorocksdb.KTwoLevelIndexSearchIndexType)
 	}
 
-	return tblOpts
+	return tblOpts, isHashSearch
 }
 
 func getOptions(p *properties.Properties) *gorocksdb.Options {
@@ -168,7 +170,11 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 	opts.SetTargetFileSizeBase(p.GetUint64(rocksdbTargetFileSizeBase, 64<<20))
 	opts.SetOptimizeFiltersForHits(p.GetBool(rocksdbOptimizeFiltersForHits, false))
 
-	opts.SetBlockBasedTableFactory(getTableOptions(p))
+	tblOpts, isHashSearch := getTableOptions(p)
+	if isHashSearch == true {
+		opts.SetPrefixExtractor(gorocksdb.NewFixedPrefixTransform(3))
+	}
+	opts.SetBlockBasedTableFactory(tblOpts)
 
 	return opts
 }
