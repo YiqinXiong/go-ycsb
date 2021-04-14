@@ -66,6 +66,7 @@ const (
 	rocksdbDisableAutoCompactions      = "rocksdb.disable_auto_compactions"
 	rocksdbTargetFileSizeBase          = "rocksdb.target_file_size_base"
 	rocksdbOptimizeFiltersForHits      = "rocksdb.optimize_filters_for_hits"
+	rocksdbStatsDumpPeriodSec          = "rocksdb.stats_dump_period_sec"
 )
 
 type rocksDBCreator struct {
@@ -169,6 +170,7 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 	opts.SetDisableAutoCompactions(p.GetBool(rocksdbDisableAutoCompactions, false))
 	opts.SetTargetFileSizeBase(p.GetUint64(rocksdbTargetFileSizeBase, 64<<20))
 	opts.SetOptimizeFiltersForHits(p.GetBool(rocksdbOptimizeFiltersForHits, false))
+	opts.SetStatsDumpPeriodSec(uint(p.GetUint64(rocksdbStatsDumpPeriodSec, 600)))
 
 	tblOpts, isHashSearch := getTableOptions(p)
 	if isHashSearch == true {
