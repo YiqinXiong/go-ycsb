@@ -171,6 +171,7 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 	opts.SetTargetFileSizeBase(p.GetUint64(rocksdbTargetFileSizeBase, 64<<20))
 	opts.SetOptimizeFiltersForHits(p.GetBool(rocksdbOptimizeFiltersForHits, false))
 	opts.SetStatsDumpPeriodSec(uint(p.GetUint64(rocksdbStatsDumpPeriodSec, 600)))
+	opts.EnableStatistics() // makes statistics is not nil
 
 	tblOpts, isHashSearch := getTableOptions(p)
 	if isHashSearch == true {
