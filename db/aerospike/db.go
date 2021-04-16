@@ -162,6 +162,10 @@ func (adb *aerospikedb) Delete(ctx context.Context, table string, key string) er
 	return err
 }
 
+func (adb *aerospikedb) GetStatisticsString() string {
+	return ""
+}
+
 type aerospikeCreator struct{}
 
 func (a aerospikeCreator) Create(p *properties.Properties) (ycsb.DB, error) {

@@ -123,6 +123,10 @@ func (db *minioDB) Delete(ctx context.Context, table string, key string) error {
 	return db.db.RemoveObject(table, key)
 }
 
+func (db *minioDB) GetStatisticsString() string {
+	return ""
+}
+
 func init() {
 	ycsb.RegisterDBCreator("minio", minioCreator{})
 }

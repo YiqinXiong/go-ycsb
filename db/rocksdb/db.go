@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/YiqinXiong/gorocksdb"
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/prop"
 	"github.com/pingcap/go-ycsb/pkg/util"
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
-	"github.com/tecbot/gorocksdb"
 )
 
 //  properties
@@ -183,8 +183,6 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 }
 
 func (db *rocksDB) Close() error {
-	// print statistics string before close rocksdb
-	fmt.Printf("%s\n", db.db.opts.GetStatisticsString())
 	db.db.Close()
 	return nil
 }
@@ -280,6 +278,11 @@ func (db *rocksDB) Delete(ctx context.Context, table string, key string) error {
 	rowKey := db.getRowKey(table, key)
 
 	return db.db.Delete(db.writeOpts, rowKey)
+}
+
+func (db *rocksDB) GetStatisticsString() string {
+	opts := db.db.Opts()
+	return opts.GetStatisticsString()
 }
 
 func init() {

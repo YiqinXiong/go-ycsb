@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/pingcap/go-ycsb/pkg/client"
-	"github.com/pingcap/go-ycsb/pkg/measurement"
 	"github.com/pingcap/go-ycsb/pkg/prop"
 	"github.com/spf13/cobra"
 )
@@ -57,9 +56,9 @@ func runClientCommandFunc(cmd *cobra.Command, args []string, doTransactions bool
 	c := client.NewClient(globalProps, globalWorkload, globalDB)
 	start := time.Now()
 	c.Run(globalContext)
+	warmuptime := globalProps.GetInt64(prop.WarmUpTime, 0)
 
-	fmt.Printf("Run finished, takes %s\n", time.Now().Sub(start))
-	measurement.Output()
+	fmt.Printf("Run finished, takes %s\n", time.Since(start.Add(time.Duration(warmuptime)*time.Second)))
 }
 
 func runLoadCommandFunc(cmd *cobra.Command, args []string) {

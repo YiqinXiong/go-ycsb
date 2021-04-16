@@ -172,3 +172,7 @@ func (db DbWrapper) Analyze(ctx context.Context, table string) error {
 	}
 	return nil
 }
+
+func (db DbWrapper) GetStatisticsString() string {
+	return db.DB.GetStatisticsString()
+}

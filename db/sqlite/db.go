@@ -274,6 +274,10 @@ func (db *sqliteDB) Delete(ctx context.Context, table string, key string) error 
 	return db.execQuery(ctx, query, key)
 }
 
+func (db *sqliteDB) GetStatisticsString() string {
+	return ""
+}
+
 func init() {
 	ycsb.RegisterDBCreator("sqlite", sqliteCreator{})
 }

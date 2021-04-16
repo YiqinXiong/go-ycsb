@@ -250,6 +250,10 @@ func (db *basicDB) Delete(ctx context.Context, table string, key string) error {
 	return nil
 }
 
+func (db *basicDB) GetStatisticsString() string {
+	return ""
+}
+
 func (db *basicDB) BatchDelete(ctx context.Context, table string, keys []string) error {
 	panic("The basicDB has not implemented the batch operation")
 }

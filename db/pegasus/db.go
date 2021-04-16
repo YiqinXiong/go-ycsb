@@ -144,6 +144,10 @@ func (db *pegasusDB) Delete(ctx context.Context, table string, key string) error
 	return err
 }
 
+func (db *pegasusDB) GetStatisticsString() string {
+	return ""
+}
+
 type pegasusCreator struct{}
 
 func (pegasusCreator) Create(p *properties.Properties) (ycsb.DB, error) {

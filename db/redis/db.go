@@ -99,6 +99,10 @@ func (r *redis) Delete(ctx context.Context, table string, key string) error {
 	return r.client.Del(table + "/" + key).Err()
 }
 
+func (r *redis) GetStatisticsString() string {
+	return ""
+}
+
 type redisCreator struct{}
 
 func (r redisCreator) Create(p *properties.Properties) (ycsb.DB, error) {

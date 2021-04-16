@@ -235,6 +235,10 @@ func (db *boltDB) Delete(ctx context.Context, table string, key string) error {
 	return err
 }
 
+func (db *boltDB) GetStatisticsString() string {
+	return ""
+}
+
 func init() {
 	ycsb.RegisterDBCreator("boltdb", boltCreator{})
 }

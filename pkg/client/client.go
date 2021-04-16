@@ -196,7 +196,10 @@ func (c *Client) Run(ctx context.Context) {
 			select {
 			case <-t.C:
 				measurement.Output()
+				fmt.Printf("** DUMP Statistics **\n%s\n", c.db.GetStatisticsString())
 			case <-measureCtx.Done():
+				measurement.Output()
+				fmt.Printf("** DUMP Statistics **\n%s\n", c.db.GetStatisticsString())
 				return
 			}
 		}

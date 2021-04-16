@@ -353,6 +353,10 @@ func (db *spannerDB) Delete(ctx context.Context, table string, key string) error
 	return err
 }
 
+func (db *spannerDB) GetStatisticsString() string {
+	return ""
+}
+
 func init() {
 	ycsb.RegisterDBCreator("spanner", spannerCreator{})
 }

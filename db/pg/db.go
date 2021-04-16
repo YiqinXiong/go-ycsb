@@ -349,6 +349,10 @@ func (db *pgDB) Delete(ctx context.Context, table string, key string) error {
 	return db.execQuery(ctx, query, key)
 }
 
+func (db *pgDB) GetStatisticsString() string {
+	return ""
+}
+
 func init() {
 	ycsb.RegisterDBCreator("pg", pgCreator{})
 	ycsb.RegisterDBCreator("postgresql", pgCreator{})
