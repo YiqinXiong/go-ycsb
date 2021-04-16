@@ -183,6 +183,8 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 }
 
 func (db *rocksDB) Close() error {
+	// print statistics string before close rocksdb
+	fmt.Printf("%s\n", db.db.opts.GetStatisticsString())
 	db.db.Close()
 	return nil
 }
