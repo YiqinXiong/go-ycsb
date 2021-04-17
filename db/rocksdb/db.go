@@ -19,6 +19,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/YiqinXiong/gorocksdb"
 	"github.com/magiconair/properties"
@@ -61,12 +64,14 @@ const (
 	rocksdbIndexType                        = "rocksdb.index_type"
 	// TODO: add more configurations
 	// xyq add
-	rocksdbBitsPerKey                  = "rocksdb.bits_per_key"
-	rocksdbMinWriteBufferNumberToMerge = "rocksdb.min_write_buffer_number_to_merge"
-	rocksdbDisableAutoCompactions      = "rocksdb.disable_auto_compactions"
-	rocksdbTargetFileSizeBase          = "rocksdb.target_file_size_base"
-	rocksdbOptimizeFiltersForHits      = "rocksdb.optimize_filters_for_hits"
-	rocksdbStatsDumpPeriodSec          = "rocksdb.stats_dump_period_sec"
+	rocksdbBitsPerKey                          = "rocksdb.bits_per_key"
+	rocksdbMinWriteBufferNumberToMerge         = "rocksdb.min_write_buffer_number_to_merge"
+	rocksdbDisableAutoCompactions              = "rocksdb.disable_auto_compactions"
+	rocksdbTargetFileSizeBase                  = "rocksdb.target_file_size_base"
+	rocksdbOptimizeFiltersForHits              = "rocksdb.optimize_filters_for_hits"
+	rocksdbStatsDumpPeriodSec                  = "rocksdb.stats_dump_period_sec"
+	kGB                                float64 = 1073741824.0
+	kMB                                float64 = 1048576.0
 )
 
 type rocksDBCreator struct {
@@ -82,9 +87,54 @@ type rocksDB struct {
 
 	readOpts  *gorocksdb.ReadOptions
 	writeOpts *gorocksdb.WriteOptions
+
+	internalStatsSnapshot *internalStats
 }
 
 type contextKey string
+
+type internalStats struct {
+	// Cumulative
+	start_time         time.Time
+	num_keys_read      uint64
+	user_bytes_read    uint64
+	user_bytes_written uint64
+	num_keys_written   uint64
+	write_other        uint64
+	write_self         uint64
+	wal_bytes          uint64
+	wal_synced         uint64
+	write_with_wal     uint64
+	write_stall_micros uint64
+	// about scan
+	num_seek        uint64
+	num_next        uint64
+	num_prev        uint64
+	num_seek_found  uint64
+	num_next_found  uint64
+	num_prev_found  uint64
+	iter_read_bytes uint64
+	// Interval
+	interval_start_time         time.Time
+	interval_num_keys_read      uint64
+	interval_user_bytes_read    uint64
+	interval_user_bytes_written uint64
+	interval_num_keys_written   uint64
+	interval_write_other        uint64
+	interval_write_self         uint64
+	interval_wal_bytes          uint64
+	interval_wal_synced         uint64
+	interval_write_with_wal     uint64
+	interval_write_stall_micros uint64
+	// about scan
+	interval_num_seek        uint64
+	interval_num_next        uint64
+	interval_num_prev        uint64
+	interval_num_seek_found  uint64
+	interval_num_next_found  uint64
+	interval_num_prev_found  uint64
+	interval_iter_read_bytes uint64
+}
 
 func (c rocksDBCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	dir := p.GetString(rocksdbDir, "/tmp/rocksdb")
@@ -100,13 +150,16 @@ func (c rocksDBCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 		return nil, err
 	}
 
+	stat := newInternalStats("")
+
 	return &rocksDB{
-		p:         p,
-		db:        db,
-		r:         util.NewRowCodec(p),
-		bufPool:   util.NewBufPool(),
-		readOpts:  gorocksdb.NewDefaultReadOptions(),
-		writeOpts: gorocksdb.NewDefaultWriteOptions(),
+		p:                     p,
+		db:                    db,
+		r:                     util.NewRowCodec(p),
+		bufPool:               util.NewBufPool(),
+		readOpts:              gorocksdb.NewDefaultReadOptions(),
+		writeOpts:             gorocksdb.NewDefaultWriteOptions(),
+		internalStatsSnapshot: stat,
 	}, nil
 }
 
@@ -282,7 +335,198 @@ func (db *rocksDB) Delete(ctx context.Context, table string, key string) error {
 
 func (db *rocksDB) GetStatisticsString() string {
 	opts := db.db.Opts()
-	return opts.GetStatisticsString()
+	ss := opts.GetStatisticsString()
+	st := db.internalStatsSnapshot
+	st.intervalCount(ss)
+	elapsed := time.Since(st.start_time).Seconds()
+	intervalElapsed := time.Since(st.interval_start_time).Seconds()
+	st.resetIntervalStartTime()
+
+	timeStr := fmt.Sprintf("Cumulative Takes: %.1f sec, Interval Takes: %.1f sec\n", elapsed, intervalElapsed)
+	cumulativeWriteStr := fmt.Sprintf("Cumulative writes: %v writes, %v keys, %v commit groups, %.1f writes per commit group, ingest: %.2f GB, %.2f MB/s\n",
+		(st.write_other + st.write_self),
+		st.num_keys_written,
+		st.write_self,
+		float64(st.write_other+st.write_self)/float64(st.write_self+1),
+		float64(st.user_bytes_written)/kGB,
+		float64(st.user_bytes_written)/kMB/elapsed)
+	cumulativeReadStr := fmt.Sprintf("Cumulative reads: %v keys, read_bytes: %.2f GB, %.2f MB/s\n",
+		st.num_keys_read,
+		float64(st.user_bytes_read)/kGB,
+		float64(st.user_bytes_read)/kMB/elapsed)
+	cumulativeScanStr := fmt.Sprintf("Cumulative scans: %v seeks, %v seekfounds, %v nexts, %v nextfounds, %v prevs, %v prevfounds, iter_read_bytes: %.2f GB, %.2f MB/s\n",
+		st.num_seek, st.num_seek_found,
+		st.num_next, st.num_next_found,
+		st.num_prev, st.num_prev_found,
+		float64(st.iter_read_bytes)/kGB,
+		float64(st.iter_read_bytes)/kMB/elapsed)
+	cumulativeWALStr := fmt.Sprintf("Cumulative WAL: %v writes, %v syncs, %.2f writes per sync, written: %.2f GB, %.2f MB/s\n",
+		st.write_with_wal, st.wal_synced,
+		float64(st.write_with_wal)/float64(st.wal_synced+1),
+		float64(st.wal_bytes)/kGB,
+		float64(st.wal_bytes)/kMB/elapsed)
+	cumulativeStallStr := fmt.Sprintf("Cumulative stall: %v us, %.1f percent\n",
+		st.write_stall_micros,
+		float64(st.write_stall_micros)/10000.0/elapsed)
+	cumulativeStr := cumulativeWriteStr + cumulativeReadStr + cumulativeScanStr + cumulativeWALStr + cumulativeStallStr
+
+	intervalWriteStr := fmt.Sprintf("Interval writes: %v writes, %v keys, %v commit groups, %.1f writes per commit group, ingest: %.2f MB, %.2f MB/s\n",
+		(st.interval_write_other + st.interval_write_self),
+		st.interval_num_keys_written,
+		st.interval_write_self,
+		float64(st.interval_write_other+st.interval_write_self)/float64(st.interval_write_self+1),
+		float64(st.interval_user_bytes_written)/kMB,
+		float64(st.interval_user_bytes_written)/kMB/intervalElapsed)
+	intervalReadStr := fmt.Sprintf("Interval reads: %v keys, read_bytes: %.2f MB, %.2f MB/s\n",
+		st.interval_num_keys_read,
+		float64(st.interval_user_bytes_read)/kMB,
+		float64(st.interval_user_bytes_read)/kMB/intervalElapsed)
+	intervalScanStr := fmt.Sprintf("Interval scans: %v seeks, %v seekfounds, %v nexts, %v nextfounds, %v prevs, %v prevfounds, iter_read_bytes: %.2f MB, %.2f MB/s\n",
+		st.interval_num_seek, st.interval_num_seek_found,
+		st.interval_num_next, st.interval_num_next_found,
+		st.interval_num_prev, st.interval_num_prev_found,
+		float64(st.interval_iter_read_bytes)/kMB,
+		float64(st.interval_iter_read_bytes)/kMB/intervalElapsed)
+	intervalWALStr := fmt.Sprintf("Interval WAL: %v writes, %v syncs, %.2f writes per sync, written: %.2f MB, %.2f MB/s\n",
+		st.interval_write_with_wal, st.interval_wal_synced,
+		float64(st.interval_write_with_wal)/float64(st.interval_wal_synced+1),
+		float64(st.interval_wal_bytes)/kMB,
+		float64(st.interval_wal_bytes)/kMB/intervalElapsed)
+	intervalStallStr := fmt.Sprintf("Interval stall: %v us, %.1f percent\n",
+		st.interval_write_stall_micros,
+		float64(st.interval_write_stall_micros)/10000.0/intervalElapsed)
+	intervalStr := intervalWriteStr + intervalReadStr + intervalScanStr + intervalWALStr + intervalStallStr
+
+	statisticsStr := timeStr + cumulativeStr + intervalStr
+	return statisticsStr
+}
+
+func newInternalStats(ss string) *internalStats {
+	stat := new(internalStats)
+	stat.start_time = time.Now()
+	stat.interval_start_time = time.Now()
+
+	stat.num_keys_read = 0
+	stat.user_bytes_read = 0
+	stat.user_bytes_written = 0
+	stat.num_keys_written = 0
+	stat.write_other = 0
+	stat.write_self = 0
+	stat.wal_bytes = 0
+	stat.wal_synced = 0
+	stat.write_with_wal = 0
+	stat.write_stall_micros = 0
+	stat.num_seek = 0
+	stat.num_next = 0
+	stat.num_prev = 0
+	stat.num_seek_found = 0
+	stat.num_next_found = 0
+	stat.num_prev_found = 0
+	stat.iter_read_bytes = 0
+
+	stat.interval_num_keys_read = 0
+	stat.interval_user_bytes_read = 0
+	stat.interval_user_bytes_written = 0
+	stat.interval_num_keys_written = 0
+	stat.interval_write_other = 0
+	stat.interval_write_self = 0
+	stat.interval_wal_bytes = 0
+	stat.interval_wal_synced = 0
+	stat.interval_write_with_wal = 0
+	stat.interval_write_stall_micros = 0
+	stat.interval_num_seek = 0
+	stat.interval_num_next = 0
+	stat.interval_num_prev = 0
+	stat.interval_num_seek_found = 0
+	stat.interval_num_next_found = 0
+	stat.interval_num_prev_found = 0
+	stat.interval_iter_read_bytes = 0
+
+	return stat
+}
+
+func (stat *internalStats) intervalCount(ss string) {
+	lines := strings.Split(ss, "\n")
+	statMap := make(map[string]string)
+	for _, s := range lines {
+		line := strings.SplitN(s, " ", 2)
+		if len(line) < 2 {
+			continue
+		}
+		statMap[line[0]] = line[1]
+	}
+
+	num_keys_read, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.keys.read"], " : ", 2)[1], 10, 64)
+	stat.interval_num_keys_read = num_keys_read - stat.num_keys_read
+	stat.num_keys_read = num_keys_read
+
+	user_bytes_read, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.bytes.read"], " : ", 2)[1], 10, 64)
+	stat.interval_user_bytes_read = user_bytes_read - stat.user_bytes_read
+	stat.user_bytes_read = user_bytes_read
+
+	user_bytes_written, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.bytes.written"], " : ", 2)[1], 10, 64)
+	stat.interval_user_bytes_written = user_bytes_written - stat.user_bytes_written
+	stat.user_bytes_written = user_bytes_written
+
+	num_keys_written, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.keys.written"], " : ", 2)[1], 10, 64)
+	stat.interval_num_keys_written = num_keys_written - stat.num_keys_written
+	stat.num_keys_written = num_keys_written
+
+	write_other, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.write.other"], " : ", 2)[1], 10, 64)
+	stat.interval_write_other = write_other - stat.write_other
+	stat.write_other = write_other
+
+	write_self, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.write.self"], " : ", 2)[1], 10, 64)
+	stat.interval_write_self = write_self - stat.write_self
+	stat.write_self = write_self
+
+	wal_bytes, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.wal.bytes"], " : ", 2)[1], 10, 64)
+	stat.interval_wal_bytes = wal_bytes - stat.wal_bytes
+	stat.wal_bytes = wal_bytes
+
+	wal_synced, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.wal.synced"], " : ", 2)[1], 10, 64)
+	stat.interval_wal_synced = wal_synced - stat.wal_synced
+	stat.wal_synced = wal_synced
+
+	write_with_wal, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.write.wal"], " : ", 2)[1], 10, 64)
+	stat.interval_write_with_wal = write_with_wal - stat.write_with_wal
+	stat.write_with_wal = write_with_wal
+
+	write_stall_micros, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.stall.micros"], " : ", 2)[1], 10, 64)
+	stat.interval_write_stall_micros = write_stall_micros - stat.write_stall_micros
+	stat.write_stall_micros = write_stall_micros
+
+	num_seek, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.db.seek"], " : ", 2)[1], 10, 64)
+	stat.interval_num_seek = num_seek - stat.num_seek
+	stat.num_seek = num_seek
+
+	num_next, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.db.next"], " : ", 2)[1], 10, 64)
+	stat.interval_num_next = num_next - stat.num_next
+	stat.num_next = num_next
+
+	num_prev, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.db.prev"], " : ", 2)[1], 10, 64)
+	stat.interval_num_prev = num_prev - stat.num_prev
+	stat.num_prev = num_prev
+
+	num_seek_found, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.db.seek.found"], " : ", 2)[1], 10, 64)
+	stat.interval_num_seek_found = num_seek_found - stat.num_seek_found
+	stat.num_seek_found = num_seek_found
+
+	num_next_found, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.db.next.found"], " : ", 2)[1], 10, 64)
+	stat.interval_num_next_found = num_next_found - stat.num_next_found
+	stat.num_next_found = num_next_found
+
+	num_prev_found, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.number.db.prev.found"], " : ", 2)[1], 10, 64)
+	stat.interval_num_prev_found = num_prev_found - stat.num_prev_found
+	stat.num_prev_found = num_prev_found
+
+	iter_read_bytes, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.db.iter.bytes.read"], " : ", 2)[1], 10, 64)
+	stat.interval_iter_read_bytes = iter_read_bytes - stat.iter_read_bytes
+	stat.iter_read_bytes = iter_read_bytes
+}
+
+func (stat *internalStats) resetIntervalStartTime() {
+	stat.interval_start_time = time.Now()
 }
 
 func init() {
