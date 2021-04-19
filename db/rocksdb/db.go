@@ -64,14 +64,16 @@ const (
 	rocksdbIndexType                        = "rocksdb.index_type"
 	// TODO: add more configurations
 	// xyq add
-	rocksdbBitsPerKey                          = "rocksdb.bits_per_key"
-	rocksdbMinWriteBufferNumberToMerge         = "rocksdb.min_write_buffer_number_to_merge"
-	rocksdbDisableAutoCompactions              = "rocksdb.disable_auto_compactions"
-	rocksdbTargetFileSizeBase                  = "rocksdb.target_file_size_base"
-	rocksdbOptimizeFiltersForHits              = "rocksdb.optimize_filters_for_hits"
-	rocksdbStatsDumpPeriodSec                  = "rocksdb.stats_dump_period_sec"
-	kGB                                float64 = 1073741824.0
-	kMB                                float64 = 1048576.0
+	rocksdbBitsPerKey                              = "rocksdb.bits_per_key"
+	rocksdbMinWriteBufferNumberToMerge             = "rocksdb.min_write_buffer_number_to_merge"
+	rocksdbDisableAutoCompactions                  = "rocksdb.disable_auto_compactions"
+	rocksdbTargetFileSizeBase                      = "rocksdb.target_file_size_base"
+	rocksdbOptimizeFiltersForHits                  = "rocksdb.optimize_filters_for_hits"
+	rocksdbStatsDumpPeriodSec                      = "rocksdb.stats_dump_period_sec"
+	rocksdbMaxBackgroundCompactions                = "rocksdb.max_background_compactions"
+	rocksdbSoftPendingCompactionBytesLimit         = "rocksdb.soft_pending_compaction_bytes_limit"
+	kGB                                    float64 = 1073741824.0
+	kMB                                    float64 = 1048576.0
 )
 
 type rocksDBCreator struct {
@@ -225,6 +227,8 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 	opts.SetOptimizeFiltersForHits(p.GetBool(rocksdbOptimizeFiltersForHits, false))
 	opts.SetStatsDumpPeriodSec(uint(p.GetUint64(rocksdbStatsDumpPeriodSec, 600)))
 	opts.EnableStatistics() // makes statistics is not nil
+	opts.SetMaxBackgroundCompactions(p.GetInt(rocksdbMaxBackgroundCompactions, 1))
+	opts.SetSoftPendingCompactionBytesLimit(p.GetUint64(rocksdbSoftPendingCompactionBytesLimit, 64<<30))
 
 	tblOpts, isHashSearch := getTableOptions(p)
 	if isHashSearch == true {
