@@ -256,7 +256,8 @@ func (db *rocksDB) Close() error {
 	manualCompact := db.p.GetBool(rocksdbManualCompaction, false)
 	if manualCompact == true {
 		fmt.Println("Trigger a manual compaction before DB closed")
-		db.db.CompactRange(Range{nil, nil})
+		r := gorocksdb.Range{nil, nil}
+		db.db.CompactRange(r)
 	}
 	db.db.Close()
 	return nil
