@@ -73,6 +73,7 @@ const (
 	rocksdbMaxBackgroundCompactions                = "rocksdb.max_background_compactions"
 	rocksdbMaxBackgroundJobs                       = "rocksdb.max_background_jobs"
 	rocksdbSoftPendingCompactionBytesLimit         = "rocksdb.soft_pending_compaction_bytes_limit"
+	rocksdbDisableWAL                              = "rocksdb.disable_wal"
 	kGB                                    float64 = 1073741824.0
 	kMB                                    float64 = 1048576.0
 )
@@ -148,6 +149,8 @@ func (c rocksDBCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 
 	opts := getOptions(p)
 
+	wOpts := getWriteOptions(p)
+
 	db, err := gorocksdb.OpenDb(opts, dir)
 	if err != nil {
 		return nil, err
@@ -161,7 +164,7 @@ func (c rocksDBCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 		r:                     util.NewRowCodec(p),
 		bufPool:               util.NewBufPool(),
 		readOpts:              gorocksdb.NewDefaultReadOptions(),
-		writeOpts:             gorocksdb.NewDefaultWriteOptions(),
+		writeOpts:             wOpts,
 		internalStatsSnapshot: stat,
 	}, nil
 }
@@ -197,6 +200,13 @@ func getTableOptions(p *properties.Properties) (*gorocksdb.BlockBasedTableOption
 	}
 
 	return tblOpts, isHashSearch
+}
+
+func getWriteOptions(p *properties.Properties) *gorocksdb.WriteOptions {
+	wOpts := gorocksdb.NewDefaultWriteOptions()
+	wOpts.DisableWAL(p.GetBool(rocksdbDisableWAL, false))
+
+	return wOpts
 }
 
 func getOptions(p *properties.Properties) *gorocksdb.Options {
