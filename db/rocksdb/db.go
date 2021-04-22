@@ -74,6 +74,7 @@ const (
 	rocksdbMaxBackgroundJobs                       = "rocksdb.max_background_jobs"
 	rocksdbSoftPendingCompactionBytesLimit         = "rocksdb.soft_pending_compaction_bytes_limit"
 	rocksdbDisableWAL                              = "rocksdb.disable_wal"
+	rocksdbManualCompaction                        = "rocksdb.manual_compaction"
 	kGB                                    float64 = 1073741824.0
 	kMB                                    float64 = 1048576.0
 )
@@ -252,6 +253,11 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 }
 
 func (db *rocksDB) Close() error {
+	manualCompact := db.p.GetBool(rocksdbManualCompaction, false)
+	if manualCompact == true {
+		fmt.Println("Trigger a manual compaction before DB closed")
+		db.db.CompactRange(Range{nil, nil})
+	}
 	db.db.Close()
 	return nil
 }
