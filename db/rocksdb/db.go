@@ -181,7 +181,7 @@ func getTableOptions(p *properties.Properties) (*gorocksdb.BlockBasedTableOption
 		if b == "rocksdb.BuiltinBloomFilter" {
 			// const defaultBitsPerKey = 10
 			BitsPerKey := p.GetInt(rocksdbBitsPerKey, 10)
-			tblOpts.SetFilterPolicy(gorocksdb.NewBloomFilter(BitsPerKey))
+			tblOpts.SetFilterPolicy(gorocksdb.NewBloomFilterFull(BitsPerKey))
 		}
 	}
 
