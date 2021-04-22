@@ -177,7 +177,7 @@ func getTableOptions(p *properties.Properties) (*gorocksdb.BlockBasedTableOption
 	tblOpts.SetWholeKeyFiltering(p.GetBool(rocksdbWholeKeyFiltering, true))
 	tblOpts.SetBlockRestartInterval(p.GetInt(rocksdbBlockRestartInterval, 16))
 
-	if b := p.GetString(rocksdbFilterPolicy, ""); len(b) > 0 {
+	if b := p.GetString(rocksdbFilterPolicy, "rocksdb.BuiltinBloomFilter"); len(b) > 0 {
 		if b == "rocksdb.BuiltinBloomFilter" {
 			// const defaultBitsPerKey = 10
 			BitsPerKey := p.GetInt(rocksdbBitsPerKey, 10)

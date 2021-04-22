@@ -5,7 +5,7 @@ require (
 	cloud.google.com/go/spanner v1.1.0
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/XiaoMi/pegasus-go-client v0.0.0-20181029071519-9400942c5d1c
-	github.com/YiqinXiong/gorocksdb v0.0.0-20210416090700-bc6acf3cad1c
+	github.com/YiqinXiong/gorocksdb v0.0.0-20210419122239-32454ca21333
 	github.com/aerospike/aerospike-client-go v1.35.2
 	github.com/apache/thrift v0.0.0-20171203172758-327ebb6c2b6d // indirect
 	github.com/apple/foundationdb/bindings/go v0.0.0-20200112054404-407dc0907f4f

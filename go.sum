@@ -28,6 +28,8 @@ github.com/XiaoMi/pegasus-go-client v0.0.0-20181029071519-9400942c5d1c h1:3fAhdH
 github.com/XiaoMi/pegasus-go-client v0.0.0-20181029071519-9400942c5d1c/go.mod h1:KcL6D/4RZ8RAYzQ5gKI0odcdWUmCVlbQTOlWrhP71CY=
 github.com/YiqinXiong/gorocksdb v0.0.0-20210416090700-bc6acf3cad1c h1:4GrV/nR380SLKV9Uthe/GjGYSSaOSbjjqpnBhz6hB7E=
 github.com/YiqinXiong/gorocksdb v0.0.0-20210416090700-bc6acf3cad1c/go.mod h1:qp1ZYBB4dqReBDoNqUCb7uD3TSz5yAd9f8QIqufTKQY=
+github.com/YiqinXiong/gorocksdb v0.0.0-20210419122239-32454ca21333 h1:ZkDquut4AvkZvTddT+fwYz4bY+3L6lBEU/Yuwcd3VcI=
+github.com/YiqinXiong/gorocksdb v0.0.0-20210419122239-32454ca21333/go.mod h1:qp1ZYBB4dqReBDoNqUCb7uD3TSz5yAd9f8QIqufTKQY=
 github.com/aerospike/aerospike-client-go v1.35.2 h1:TWV2Bn59Ig7SM4Zue84fFsPGlfFJX/6xbuGHyYFS/ag=
 github.com/aerospike/aerospike-client-go v1.35.2/go.mod h1:zj8LBEnWBDOVEIJt8LvaRvDG5ARAoa5dBeHaB472NRc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc h1:cAKDfWh5VpdgMhJosfJnn5/FoN2SRZ4p7fJNX58YPaU=
