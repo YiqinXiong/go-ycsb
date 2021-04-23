@@ -75,6 +75,7 @@ const (
 	rocksdbSoftPendingCompactionBytesLimit         = "rocksdb.soft_pending_compaction_bytes_limit"
 	rocksdbDisableWAL                              = "rocksdb.disable_wal"
 	rocksdbManualCompaction                        = "rocksdb.manual_compaction"
+	rocksdbCompactBeforeClose					   = "rocksdb.compact_before_close"
 	kGB                                    float64 = 1073741824.0
 	kMB                                    float64 = 1048576.0
 )
@@ -119,6 +120,10 @@ type internalStats struct {
 	num_next_found  uint64
 	num_prev_found  uint64
 	iter_read_bytes uint64
+	//aboud compaction
+	compact_read_bytes uint64
+	compact_write_bytes uint64
+
 	// Interval
 	interval_start_time         time.Time
 	interval_num_keys_read      uint64
@@ -139,6 +144,9 @@ type internalStats struct {
 	interval_num_next_found  uint64
 	interval_num_prev_found  uint64
 	interval_iter_read_bytes uint64
+	//aboud compaction
+	interval_compact_read_bytes uint64
+	interval_compact_write_bytes uint64
 }
 
 func (c rocksDBCreator) Create(p *properties.Properties) (ycsb.DB, error) {
@@ -254,12 +262,33 @@ func getOptions(p *properties.Properties) *gorocksdb.Options {
 
 func (db *rocksDB) Close() error {
 	manualCompact := db.p.GetBool(rocksdbManualCompaction, false)
+	compactBeforeClose := db.p.GetBool(rocksdbCompactBeforeClose, false)
 	if manualCompact == true {
 		fmt.Println("Trigger a manual compaction before DB closed")
 		start := time.Now()
 		r := gorocksdb.Range{nil, nil}
 		db.db.CompactRange(r)
 		fmt.Printf("Manual Compaction finished, takes %s\n", time.Since(start))
+	} else if compactBeforeClose == true {
+		opts := db.db.Opts()
+		st := db.internalStatsSnapshot
+		no_compaction_count := 0
+		for {
+			if st.interval_compact_write_bytes == 0 && st.interval_compact_read_bytes == 0 {
+				no_compaction_count += 1
+			}
+			else {
+				no_compaction_count = 0
+			}
+			fmt.Printf("Interval bytes read:%v, write:%v, no_compaction_count:%v\n", st.interval_compact_read_bytes, st.interval_compact_write_bytes, no_compaction_count)
+			time.Sleep(time.Duration(5)*time.Second)
+			ss := opts.GetStatisticsString()
+			st.intervalCount(ss)
+			st.resetIntervalStartTime()
+			if no_compaction_count >= 3 {
+				break
+			}
+		}
 	}
 	db.db.Close()
 	return nil
@@ -393,7 +422,10 @@ func (db *rocksDB) GetStatisticsString() string {
 	cumulativeStallStr := fmt.Sprintf("Cumulative stall: %v us, %.1f percent\n",
 		st.write_stall_micros,
 		float64(st.write_stall_micros)/10000.0/elapsed)
-	cumulativeStr := cumulativeWriteStr + cumulativeReadStr + cumulativeScanStr + cumulativeWALStr + cumulativeStallStr
+	cumulativeCompactionStr := fmt.Sprintf("Cumulative compaction: %.2f GB write, %.2f MB/s write, %.2f GB read, %.2f MB/s read\n",
+		float64(st.compact_write_bytes)/kGB, float64(st.compact_write_bytes)/kMB/elapsed, 
+		float64(st.compact_read_bytes)/kGB, float64(st.compact_read_bytes)/kMB/elapsed)
+	cumulativeStr := cumulativeWriteStr + cumulativeReadStr + cumulativeScanStr + cumulativeWALStr + cumulativeStallStr + cumulativeCompactionStr
 
 	intervalWriteStr := fmt.Sprintf("Interval writes: %v writes, %v keys, %v commit groups, %.1f writes per commit group, ingest: %.2f MB, %.2f MB/s\n",
 		(st.interval_write_other + st.interval_write_self),
@@ -420,7 +452,10 @@ func (db *rocksDB) GetStatisticsString() string {
 	intervalStallStr := fmt.Sprintf("Interval stall: %v us, %.1f percent\n",
 		st.interval_write_stall_micros,
 		float64(st.interval_write_stall_micros)/10000.0/intervalElapsed)
-	intervalStr := intervalWriteStr + intervalReadStr + intervalScanStr + intervalWALStr + intervalStallStr
+	intervalCompactionStr := fmt.Sprintf("Interval compaction: %.2f GB write, %.2f MB/s write, %.2f GB read, %.2f MB/s read\n",
+		float64(st.interval_compact_write_bytes)/kGB, float64(st.interval_compact_write_bytes)/kMB/elapsed, 
+		float64(st.interval_compact_read_bytes)/kGB, float64(st.interval_compact_read_bytes)/kMB/elapsed)
+	intervalStr := intervalWriteStr + intervalReadStr + intervalScanStr + intervalWALStr + intervalStallStr + intervalCompactionStr
 
 	statisticsStr := timeStr + cumulativeStr + intervalStr
 	return statisticsStr
@@ -448,6 +483,8 @@ func newInternalStats(ss string) *internalStats {
 	stat.num_next_found = 0
 	stat.num_prev_found = 0
 	stat.iter_read_bytes = 0
+	stat.compact_read_bytes = 0
+	stat.compact_write_bytes = 0
 
 	stat.interval_num_keys_read = 0
 	stat.interval_user_bytes_read = 0
@@ -466,6 +503,8 @@ func newInternalStats(ss string) *internalStats {
 	stat.interval_num_next_found = 0
 	stat.interval_num_prev_found = 0
 	stat.interval_iter_read_bytes = 0
+	stat.interval_compact_read_bytes = 0
+	stat.interval_compact_write_bytes = 0
 
 	return stat
 }
@@ -548,6 +587,14 @@ func (stat *internalStats) intervalCount(ss string) {
 	iter_read_bytes, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.db.iter.bytes.read"], " : ", 2)[1], 10, 64)
 	stat.interval_iter_read_bytes = iter_read_bytes - stat.iter_read_bytes
 	stat.iter_read_bytes = iter_read_bytes
+
+	compact_read_bytes, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.compact.read.bytes"], " : ", 2)[1], 10, 64)
+	stat.interval_compact_read_bytes = compact_read_bytes - stat.compact_read_bytes
+	stat.compact_read_bytes = compact_read_bytes
+
+	compact_write_bytes, _ := strconv.ParseUint(strings.SplitN(statMap["rocksdb.compact.write.bytes"], " : ", 2)[1], 10, 64)
+	stat.interval_compact_write_bytes = compact_write_bytes - stat.compact_write_bytes
+	stat.compact_write_bytes = compact_write_bytes
 }
 
 func (stat *internalStats) resetIntervalStartTime() {
