@@ -18,7 +18,7 @@ import (
 	"sort"
 
 	"github.com/magiconair/properties"
-	"github.com/pingcap/go-ycsb/pkg/prop"
+	"github.com/YiqinXiong/go-ycsb/pkg/prop"
 )
 
 // createFieldIndices is a helper function to create a field -> index mapping

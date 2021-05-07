@@ -16,5 +16,5 @@
 package main
 
 import ( // Register FoundationDB database
-	_ "github.com/pingcap/go-ycsb/db/foundationdb"
+	_ "github.com/YiqinXiong/go-ycsb/db/foundationdb"
 )

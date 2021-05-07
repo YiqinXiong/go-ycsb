@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/chzyer/readline"
-	"github.com/pingcap/go-ycsb/pkg/prop"
-	"github.com/pingcap/go-ycsb/pkg/util"
+	"github.com/YiqinXiong/go-ycsb/pkg/prop"
+	"github.com/YiqinXiong/go-ycsb/pkg/util"
 
 	"github.com/spf13/cobra"
 )

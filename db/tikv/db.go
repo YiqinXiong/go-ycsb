@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"github.com/magiconair/properties"
-	"github.com/pingcap/go-ycsb/pkg/ycsb"
+	"github.com/YiqinXiong/go-ycsb/pkg/ycsb"
 	"github.com/tikv/client-go/config"
 )
 

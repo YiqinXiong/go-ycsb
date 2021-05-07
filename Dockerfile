@@ -8,8 +8,8 @@ RUN apk update && apk upgrade && \
 RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
  && chmod +x /usr/local/bin/dumb-init
 
-RUN mkdir -p /go/src/github.com/pingcap/go-ycsb
-WORKDIR /go/src/github.com/pingcap/go-ycsb
+RUN mkdir -p /go/src/github.com/YiqinXiong/go-ycsb
+WORKDIR /go/src/github.com/YiqinXiong/go-ycsb
 
 COPY go.mod .
 COPY go.sum .

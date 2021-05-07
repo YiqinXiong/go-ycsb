@@ -10,9 +10,9 @@ import (
 
 	goredis "github.com/go-redis/redis"
 	"github.com/magiconair/properties"
-	"github.com/pingcap/go-ycsb/pkg/prop"
-	"github.com/pingcap/go-ycsb/pkg/util"
-	"github.com/pingcap/go-ycsb/pkg/ycsb"
+	"github.com/YiqinXiong/go-ycsb/pkg/prop"
+	"github.com/YiqinXiong/go-ycsb/pkg/util"
+	"github.com/YiqinXiong/go-ycsb/pkg/ycsb"
 )
 
 type redisClient interface {

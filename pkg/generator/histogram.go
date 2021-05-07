@@ -36,7 +36,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pingcap/go-ycsb/pkg/util"
+	"github.com/YiqinXiong/go-ycsb/pkg/util"
 )
 
 // Histogram generates integers according to a histogram distribution.

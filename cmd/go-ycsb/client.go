@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pingcap/go-ycsb/pkg/client"
-	"github.com/pingcap/go-ycsb/pkg/prop"
+	"github.com/YiqinXiong/go-ycsb/pkg/client"
+	"github.com/YiqinXiong/go-ycsb/pkg/prop"
 	"github.com/spf13/cobra"
 )
 

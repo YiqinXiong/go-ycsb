@@ -22,13 +22,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pingcap/go-ycsb/pkg/prop"
-	"github.com/pingcap/go-ycsb/pkg/util"
+	"github.com/YiqinXiong/go-ycsb/pkg/prop"
+	"github.com/YiqinXiong/go-ycsb/pkg/util"
 
 	"github.com/magiconair/properties"
 	// sqlite package
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pingcap/go-ycsb/pkg/ycsb"
+	"github.com/YiqinXiong/go-ycsb/pkg/ycsb"
 )
 
 // Sqlite properties

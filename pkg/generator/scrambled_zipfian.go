@@ -33,7 +33,7 @@ package generator
 import (
 	"math/rand"
 
-	"github.com/pingcap/go-ycsb/pkg/util"
+	"github.com/YiqinXiong/go-ycsb/pkg/util"
 )
 
 // ScrambledZipfian produces a sequence of items, such that some items are more popular than

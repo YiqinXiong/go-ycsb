@@ -16,5 +16,5 @@
 package main
 
 import ( // Register RocksDB database
-	_ "github.com/pingcap/go-ycsb/db/rocksdb"
+	_ "github.com/YiqinXiong/go-ycsb/db/rocksdb"
 )

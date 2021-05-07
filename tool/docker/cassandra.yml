@@ -21,4 +21,4 @@ services:
 
   # monitors
   ycsb:
-    image: pingcap/go-ycsb
+    image: YiqinXiong/go-ycsb

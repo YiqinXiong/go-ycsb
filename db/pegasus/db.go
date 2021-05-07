@@ -54,7 +54,7 @@ import (
 	"github.com/XiaoMi/pegasus-go-client/pegasus"
 	"github.com/XiaoMi/pegasus-go-client/pegasus2"
 	"github.com/magiconair/properties"
-	"github.com/pingcap/go-ycsb/pkg/ycsb"
+	"github.com/YiqinXiong/go-ycsb/pkg/ycsb"
 )
 
 var (

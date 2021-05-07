@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/magiconair/properties"
-	"github.com/pingcap/go-ycsb/pkg/util"
-	"github.com/pingcap/go-ycsb/pkg/ycsb"
+	"github.com/YiqinXiong/go-ycsb/pkg/util"
+	"github.com/YiqinXiong/go-ycsb/pkg/ycsb"
 )
 
 type histogram struct {

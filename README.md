@@ -10,8 +10,8 @@ go-ycsb is a Go port of [YCSB](https://github.com/brianfrankcooper/YCSB). It ful
 ## Getting Started
 
 ```bash
-git clone https://github.com/pingcap/go-ycsb.git $GOPATH/src/github.com/pingcap/go-ycsb
-cd $GOPATH/src/github.com/pingcap/go-ycsb
+git clone https://github.com/YiqinXiong/go-ycsb.git $GOPATH/src/github.com/YiqinXiong/go-ycsb
+cd $GOPATH/src/github.com/YiqinXiong/go-ycsb
 make
 
 ./bin/go-ycsb
